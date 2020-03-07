@@ -1,0 +1,172 @@
+import("../webrtc.gni")
+ 
+if (is_android) {
+  import("//build/config/android/config.gni")
+  import("//build/config/android/rules.gni")
+} else if (is_mac) {
+  import("//build/config/mac/rules.gni")
+} else if (is_ios) {
+  import("//build/config/ios/rules.gni")
+}
+ 
+config("common_config") {  
+  include_dirs = [
+     ".",
+     "include",
+     "src",
+     "tests"
+    ]   
+  
+  configs=[]
+  defines=[]
+}
+
+
+group("lylWebrtcClientGroup") {
+  # This target shall build all targets in examples.
+  testonly = true
+  deps = [
+    ":lylWebrtcClientDll",
+    ":lylWebrtcClientTest"
+  ]  
+}
+
+
+rtc_shared_library("lylWebrtcClientDll"){
+# rtc_static_library("lylWebrtcClientDll"){ 
+  testonly = true
+  public_configs = [ ":common_config" ]
+  sources = [  
+    "include/globalHraders.h",
+    "libwebrtcNET.h",
+    "libwebrtcNET.cc", 
+    "src/lylPeerConnection.h",
+    "src/lylPeerConnection.cc",
+    "src/lylDesktopCapturer.h",
+    "src/lylDesktopCapturer.cc",
+    "src/lylMediaConstraints.h",
+    "src/lylMediaConstraints.cc",
+    "src/lylVideoRender.h",
+    "src/lylVideoRender.cc",
+    "src/lylDataChannel.h",
+    "src/lylDataChannel.cc", 
+  ]
+  
+  deps = [ 
+      "../pc:libjingle_peerconnection",
+      "../pc:peerconnection",  
+      "../pc:peerconnection_unittests", 
+      "../pc:pc_test_utils", 
+      "../pc:rtc_pc_base",  
+      "../pc:rtc_pc",   
+
+      "../api:api",
+      "../api:rtc_stats_api",
+      "../api:libjingle_peerconnection_api",
+      "../api/audio_codecs:builtin_audio_decoder_factory",
+      "../api/audio_codecs:builtin_audio_encoder_factory",
+      "../api/video_codecs:builtin_video_decoder_factory",
+      "../api/video_codecs:builtin_video_encoder_factory",
+      "../api/video:video_frame_i420", 
+      
+      "../modules/video_capture:video_capture_module",
+      "../modules/desktop_capture",
+     
+      "../rtc_base:rtc_base",
+      "../rtc_base:rtc_base_approved",
+      "../rtc_base:rtc_json",
+      
+      "//third_party/libyuv",
+  ]
+  
+  defines=[]
+  if (is_win) { 
+      deps += [ "../media:rtc_media_base" ] 
+      configs += ["//build/config/win:windowed" ]
+      defines += ["WEBRTC_WIN"] 
+  }
+  if (is_linux) {
+      sources += []
+      cflags = [ "-Wno-deprecated-declarations" ]
+      libs = [
+        "X11",
+        "Xcomposite",
+        "Xext",
+        "Xrender",
+      ]
+      deps += [ "//build/config/linux/gtk" ]
+  } 
+  if (is_clang) {
+      # Suppress warnings from Chrome's Clang plugins.
+      # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
+      suppressed_configs = [ "//build/config/clang:find_bad_constructs" ]
+    }
+}
+
+rtc_executable("lylWebrtcClientTest"){ 
+    testonly = true    
+    public_configs = [ ":common_config" ]
+   
+    sources = [    
+      "tests/totaltest.h",
+      "tests/totaltest.cc",
+      "tests/p2ptestMain.h", 
+      "tests/p2ptestMain.cc", 
+      "tests/conductor.h",
+      "tests/conductor.cc", 
+    ]  
+ #lylWebrtcClientDll需要设置成rtc_static_library
+    deps = [
+      ":lylWebrtcClientDll",
+    ]
+ 
+    deps += [
+      "../pc:libjingle_peerconnection",
+      "../pc:peerconnection",  
+      "../pc:peerconnection_unittests", 
+      "../pc:pc_test_utils", 
+      "../pc:rtc_pc_base",  
+      "../pc:rtc_pc",   
+
+      "../api:api",
+      "../api:libjingle_peerconnection_api",
+      "../api/audio_codecs:builtin_audio_decoder_factory",
+      "../api/audio_codecs:builtin_audio_encoder_factory",
+      "../api/video_codecs:builtin_video_decoder_factory",
+      "../api/video_codecs:builtin_video_encoder_factory",
+      "../api/video:video_frame_i420", 
+      
+      "../modules/video_capture:video_capture_module",
+      "../modules/desktop_capture",
+     
+      "../rtc_base:rtc_base",
+      "../rtc_base:rtc_base_approved",
+      "../rtc_base:rtc_json",
+      
+      "//third_party/libyuv",
+    ]
+
+    defines=[]
+    if (is_win) { 
+      deps += [ "../media:rtc_media_base" ]  
+      defines += ["WEBRTC_WIN"] 
+    }
+    if (is_linux) {
+      sources += []
+      cflags = [ "-Wno-deprecated-declarations" ]
+      libs = [
+        "X11",
+        "Xcomposite",
+        "Xext",
+        "Xrender",
+      ]
+      deps += [ "//build/config/linux/gtk" ]
+    } 
+    if (is_clang) {
+      # Suppress warnings from Chrome's Clang plugins.
+      # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
+      suppressed_configs = [ "//build/config/clang:find_bad_constructs" ]
+    }
+}
+   
+
